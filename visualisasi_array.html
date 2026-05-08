@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Learning Array Visualization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --primary: #4f46e5;
+            --secondary: #d97706;
+            --accent: #059669;
+            --text-main: #0f172a;
+            --text-dim: #475569;
+            --glass-border: rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.05) 0%, transparent 40%);
+            color: var(--text-main);
+            padding: 40px 20px;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #818cf8, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+        }
+
+        .section {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge {
+            font-family: 'JetBrains+Mono', monospace;
+            font-size: 0.8rem;
+            padding: 4px 12px;
+            border-radius: 100px;
+            background: rgba(255,255,255,0.1);
+            color: var(--secondary);
+        }
+
+        /* X_TRAIN Visualization */
+        .x-visual {
+            display: flex;
+            gap: 30px;
+            overflow-x: auto;
+            padding: 20px 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) transparent;
+        }
+
+        .image-container {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            min-width: 300px;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .layer-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .pixel-grid {
+            display: grid;
+            grid-template-columns: repeat(14, 1fr);
+            gap: 1px;
+            background: #e2e8f0;
+            padding: 2px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .pixel {
+            aspect-ratio: 1;
+            background: #fff;
+        }
+
+        /* Mock pixels for a shirt (simplified) */
+        .pixel.active { background: #1e293b; }
+        .pixel.mid { background: #94a3b8; }
+
+        .bracket-label {
+            font-family: 'JetBrains+Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent);
+            margin-top: 10px;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        /* Y_TRAIN Visualization */
+        .y-visual {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .label-box {
+            width: 70px;
+            height: 90px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .label-box:hover {
+            background: var(--secondary);
+            transform: scale(1.1);
+            color: var(--bg);
+        }
+
+        .label-idx {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-bottom: 5px;
+        }
+
+        .label-val {
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .label-box:hover .label-idx {
+            color: rgba(0,0,0,0.5);
+        }
+
+        /* Mapping Section */
+        .mapping {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr auto 1fr;
+            align-items: center;
+            gap: 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 20px;
+        }
+
+        .map-card {
+            background: rgba(0,0,0,0.03);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .arrow {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        footer {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-top: 40px;
+        }
+
+        /* Pixel Intro Section */
+        .pixel-intro {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .pixel-demo {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 2px;
+            border: 2px dashed var(--primary);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .pixel-block {
+            aspect-ratio: 1;
+            border-radius: 0;
+            display: flex;
+            padding: 10px;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains+Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .pixel-block:hover {
+            color: #fff;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .pixel-block span {
+            pointer-events: none;
+        }
+
+        .pixel-text h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .pixel-text p {
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            .pixel-intro {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Updated Pipeline Styles to match screenshot */
+        .model-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+            margin-top: 30px;
+            padding-bottom: 40px;
+        }
+
+        .flow-box {
+            flex: 1;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            color: #fff;
+            position: relative;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .flow-flatten { background: #475569; border: 2px solid #334155; }
+        .flow-hidden { background: #4338ca; border: 2px solid #3730a3; }
+        .flow-output { background: #065f46; border: 2px solid #064e3b; }
+
+        .flow-box h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .flow-box p {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .flow-label {
+            position: absolute;
+            bottom: -45px;
+            left: 0;
+            right: 0;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: lowercase;
+        }
+
+        .flow-label::before {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 1px;
+            background: #cbd5e1;
+            margin-bottom: 5px;
+        }
+
+        .flow-arrow {
+            align-self: center;
+            font-size: 1.5rem;
+            color: #cbd5e1;
+        }
+
+        @media (max-width: 768px) {
+            .model-flow {
+                flex-direction: column;
+                gap: 60px;
+            }
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+        }
+
+        /* Library Styles */
+        .toolbox {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .tool-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            border-top: 4px solid var(--primary);
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .tool-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .tool-alias {
+            font-family: 'JetBrains+Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--secondary);
+            background: rgba(245, 158, 11, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .tool-desc {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        @media (max-width: 768px) {
+            .toolbox {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Dataset Split Styles */
+        .split-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .bucket {
+            border-radius: 20px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .bucket-train {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(16, 185, 129, 0.1));
+            border-color: var(--primary);
+        }
+
+        .bucket-test {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.1));
+            border-color: var(--secondary);
+        }
+
+        .bucket-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .count {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .bucket-desc {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .bucket-tag {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 100px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .split-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Unpacking Styles */
+        .unpack-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin-top: 20px;
+            perspective: 1000px;
+        }
+
+        .main-package {
+            width: 150px;
+            height: 150px;
+            background: #fff;
+            border: 3px solid var(--primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            position: relative;
+            transform: rotateY(-20deg);
+        }
+
+        .package-label {
+            position: absolute;
+            bottom: -30px;
+            font-size: 0.8rem;
+            color: var(--primary);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .unpack-arrow {
+            font-size: 2rem;
+            color: var(--text-dim);
+        }
+
+        .variable-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .var-box {
+            background: #fff;
+            border: 1px solid var(--glass-border);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 120px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .var-name {
+            font-family: 'JetBrains+Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 5px;
+        }
+
+        .var-content {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        @media (max-width: 768px) {
+            .unpack-container {
+                flex-direction: column;
+            }
+        }
+
+        /* Normalization Styles */
+        .norm-container {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .norm-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 15px;
+            border: 1px solid var(--glass-border);
+            text-align: center;
+        }
+
+        .norm-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .norm-pixel {
+            aspect-ratio: 1;
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .math-op {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            background: #fff;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        @media (max-width: 768px) {
+            .norm-container {
+                grid-template-columns: 1fr;
+            }
+            .math-op {
+                transform: rotate(90deg);
+                margin: 0 auto;
+            }
+        }
+
+        /* Dictionary Styles */
+        .dict-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+
+        .dict-item {
+            background: #fff;
+            padding: 10px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--glass-border);
+            transition: all 0.2s ease;
+        }
+
+        .dict-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .dict-num {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .dict-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        /* Training Styles */
+        .training-visual {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .epoch-bar {
+            height: 30px;
+            background: #e2e8f0;
+            border-radius: 100px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .epoch-progress {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            width: 0%;
+            transition: width 1s ease;
+        }
+
+        .epoch-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem;
+            line-height: 30px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        @media (max-width: 768px) {
+            .dict-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Compile Styles */
+        .compile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .rule-card {
+            background: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            border-top: 4px solid var(--accent);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .rule-name {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+
+        .rule-val {
+            font-family: 'JetBrains+Mono', monospace;
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.05);
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        /* Prediction Styles */
+        .prob-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .prob-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .prob-label {
+            width: 80px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-align: right;
+        }
+
+        .prob-bar-bg {
+            flex: 1;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .prob-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 100px;
+        }
+
+        .prob-val {
+            width: 40px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .decision-box {
+            background: rgba(5, 150, 105, 0.1);
+            border: 2px solid var(--accent);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        /* Flatten Detail Styles */
+        .flatten-detail {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            background: rgba(0,0,0,0.02);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .grid-2d {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+            width: 80px;
+        }
+
+        .pixel-small {
+            width: 15px;
+            height: 15px;
+            background: var(--primary);
+            border-radius: 0;
+        }
+
+        .vector-1d {
+            display: flex;
+            gap: 2px;
+            overflow: hidden;
+            max-width: 200px;
+        }
+
+        .neuron-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            background: #fff;
+        }
+
+        .neuron-link {
+            stroke: var(--primary);
+            stroke-width: 1;
+            opacity: 0.2;
+        }
+
+        /* Comparison Styles */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .view-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid var(--glass-border);
+        }
+
+        .human-view {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            filter: blur(0px);
+            transition: filter 0.5s ease;
+        }
+
+        .view-card:hover .human-view {
+            filter: blur(4px);
+        }
+
+        .computer-view {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #000;
+            padding: 2px;
+            border-radius: 4px;
+        }
+
+        .comp-pixel {
+            background: #fff;
+            aspect-ratio: 1;
+            border-radius: 0;
+        }
+
+        .zoom-line {
+            height: 2px;
+            background: dashed var(--primary);
+            width: 100%;
+            margin: 10px 0;
+            opacity: 0.3;
+        }
+
+        .norm-grid-full {
+            display: grid;
+            grid-template-columns: repeat(14, 1fr);
+            gap: 1px;
+            background: #eee;
+            padding: 5px;
+            border-radius: 8px;
+            width: 150px;
+            margin: 10px auto;
+        }
+
+        .norm-p-full {
+            aspect-ratio: 1;
+            border-radius: 0;
+            background: #fff;
+        }
+
+        /* Update norm-box to fit full grid */
+        .norm-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 15px;
+            border: 1px solid var(--glass-border);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        code {
+            font-family: 'JetBrains+Mono', monospace;
+            background: rgba(0,0,0,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #be185d;
+        }
+
+        /* Specific Shirt shape pixels */
+        .pixel-shirt {
+            /* We will use JS to inject these for better control */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Belajar Dasar AI: Gambar & Data</h1>
+        <p class="subtitle">Memahami bagaimana sebuah foto berubah menjadi angka di dalam otak AI</p>
+    </header>
+
+    <!-- SECTION 00: LIBRARIES -->
+    <div class="section">
+        <div class="section-title" style="margin-bottom: 20px;">00. Kotak Peralatan (Libraries)</div>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">
+            Sebelum mulai, kita memanggil "pembantu" (Library) agar kita tidak perlu membuat rumus dari nol. Keyword <code>as</code> adalah cara kita memberi <b>nama panggilan</b> yang pendek.
+        </p>
+        <div class="toolbox">
+            <div class="tool-card" style="border-top-color: #ff6f00;">
+                <div class="tool-name">TensorFlow</div>
+                <div class="tool-alias">as tf</div>
+                <div class="tool-desc">Si "Mesin Utama". Ahli dalam membangun dan melatih otak AI (Neural Network).</div>
+            </div>
+            <div class="tool-card" style="border-top-color: #013243;">
+                <div class="tool-name">NumPy</div>
+                <div class="tool-alias">as np</div>
+                <div class="tool-desc">Si "Ahli Matematika". Jago mengolah deretan angka dan array yang banyak.</div>
+            </div>
+            <div class="tool-card" style="border-top-color: #31a354;">
+                <div class="tool-name">Matplotlib</div>
+                <div class="tool-alias">as plt</div>
+                <div class="tool-desc">Si "Pelukis". Bertugas menampilkan gambar dan grafik ke layar kita.</div>
+            </div>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--accent); background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 8px;">
+            💡 <b>Kenapa pakai alias?</b> Supaya kita cukup ngetik <code>plt.imshow()</code> daripada <code>matplotlib.pyplot.imshow()</code>. Lebih hemat waktu!
+        </p>
+    </div>
+
+    <!-- SECTION 01: DATASET SPLIT -->
+    <div class="section">
+        <div class="section-title" style="margin-bottom: 20px;">01. Pembagian Dataset (The Split)</div>
+        <p style="color: var(--text-dim); margin-bottom: 25px;">
+            Dataset tidak boleh dipakai semua untuk belajar. Kita harus membaginya menjadi dua "Ember" agar kita bisa menguji kejujuran AI.
+        </p>
+        <div class="split-container">
+            <!-- TRAINING BUCKET -->
+            <div class="bucket bucket-train">
+                <div class="bucket-tag" style="color: var(--accent);">Paling Banyak</div>
+                <div class="bucket-title">📖 Training Set</div>
+                <div class="count">60.000</div>
+                <div class="bucket-desc">
+                    <b>Buku Pelajaran:</b> Data yang digunakan AI untuk belajar pola. AI boleh melihat gambar dan kunci jawabannya berkali-kali.
+                </div>
+            </div>
+            <!-- TESTING BUCKET -->
+            <div class="bucket bucket-test">
+                <div class="bucket-tag" style="color: #ef4444;">Rahasia</div>
+                <div class="bucket-title">📝 Testing Set</div>
+                <div class="count">10.000</div>
+                <div class="bucket-desc">
+                    <b>Lembar Ujian:</b> Data rahasia yang disimpan untuk tes akhir. AI tidak boleh melihat ini sampai waktu ujian tiba.
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 20px; font-size: 0.85rem; color: var(--text-dim); text-align: center;">
+            Total: <b>70.000 Gambar</b> Pakaian
+        </div>
+    </div>
+
+    <!-- SECTION 02: UNPACKING DATA -->
+    <div class="section">
+        <div class="section-title" style="margin-bottom: 20px;">02. Proses Load Data (Unpacking)</div>
+        <p style="color: var(--text-dim); margin-bottom: 15px;">
+            Satu baris kode <code>load_data()</code> secara otomatis membongkar paket raksasa menjadi 4 bagian spesifik:
+        </p>
+        <div class="unpack-container">
+            <div class="main-package">
+                📦
+                <div class="package-label">fashion_mnist.load_data()</div>
+            </div>
+            <div class="unpack-arrow">⮕</div>
+            <div class="variable-grid">
+                <div class="var-box" style="border-color: var(--primary);">
+                    <div class="var-name">x_train</div>
+                    <div class="var-content">60.000 Foto Belajar</div>
+                </div>
+                <div class="var-box" style="border-color: var(--primary);">
+                    <div class="var-name">y_train</div>
+                    <div class="var-content">60.000 Kunci Jawaban</div>
+                </div>
+                <div class="var-box" style="border-color: var(--secondary);">
+                    <div class="var-name">x_test</div>
+                    <div class="var-content">10.000 Foto Ujian</div>
+                </div>
+                <div class="var-box" style="border-color: var(--secondary);">
+                    <div class="var-name">y_test</div>
+                    <div class="var-content">10.000 Kunci Jawaban</div>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 40px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; font-family: 'JetBrains+Mono', monospace; font-size: 0.85rem; border-left: 4px solid var(--accent);">
+            <span style="color: #666;"># Cara Python membacanya:</span><br>
+            (<span style="color: var(--primary);">x_train, y_train</span>), (<span style="color: var(--secondary);">x_test, y_test</span>) = <span style="color: var(--accent);">Hasil_Bongkar_Paket</span>
+        </div>
+    </div>
+
+    <!-- SECTION 03: APA ITU PIXEL -->
+    <div class="section">
+        <div class="pixel-intro">
+            <div class="pixel-text">
+                <h2>03. Apa itu Pixel?</h2>
+                <p>Setiap gambar digital sebenarnya tersusun dari jutaan kotak kecil yang disebut <b>Pixel</b>.</p>
+                
+                <div class="comparison-grid">
+                    <div class="view-card">
+                        <span class="layer-label">Mata Manusia</span>
+                        <div class="human-view">👟</div>
+                        <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 10px;">Kita melihat benda yang halus dan nyata.</p>
+                    </div>
+                    <div class="view-card">
+                        <span class="layer-label">Mata Komputer</span>
+                        <div class="computer-view">
+                            <div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.2;"></div><div class="comp-pixel" style="opacity: 0.5;"></div><div class="comp-pixel" style="opacity: 0.8;"></div><div class="comp-pixel" style="opacity: 1;"></div><div class="comp-pixel" style="opacity: 0.8;"></div><div class="comp-pixel" style="opacity: 0.5;"></div>
+                            <div class="comp-pixel" style="opacity: 0.2;"></div><div class="comp-pixel" style="opacity: 0.5;"></div><div class="comp-pixel" style="opacity: 0.8;"></div><div class="comp-pixel" style="opacity: 1;"></div><div class="comp-pixel" style="opacity: 1;"></div><div class="comp-pixel" style="opacity: 0.8;"></div><div class="comp-pixel" style="opacity: 0.5;"></div>
+                            <div class="comp-pixel" style="opacity: 0.5;"></div><div class="comp-pixel" style="opacity: 0.8;"></div><div class="comp-pixel" style="opacity: 1;"></div><div class="comp-pixel" style="opacity: 1;"></div><div class="comp-pixel" style="opacity: 1;"></div><div class="comp-pixel" style="opacity: 1;"></div><div class="comp-pixel" style="opacity: 0.8;"></div>
+                            <div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.2;"></div><div class="comp-pixel" style="opacity: 0.4;"></div><div class="comp-pixel" style="opacity: 0.4;"></div><div class="comp-pixel" style="opacity: 0.4;"></div><div class="comp-pixel" style="opacity: 0.2;"></div><div class="comp-pixel" style="opacity: 0.1;"></div>
+                            <div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div>
+                            <div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div>
+                            <div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div><div class="comp-pixel" style="opacity: 0.1;"></div>
+                        </div>
+                        <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 10px;">Komputer cuma melihat kotak angka kaku (Grid).</p>
+                    </div>
+                </div>
+
+                <p>Bagi manusia, ini adalah warna. Tapi bagi komputer, ini adalah <b>Angka</b>:</p>
+                <ul style="margin-left: 20px; color: var(--text-dim); font-size: 0.9rem; margin-bottom: 15px;">
+                    <li><b style="color: var(--primary);">0</b> = Hitam Pekat (Mati)</li>
+                    <li><b style="color: var(--primary);">255</b> = Putih Terang (Menyala)</li>
+                    <li><b style="color: var(--primary);">0.0 - 1.0</b> = Hasil setelah Normalisasi</li>
+                </ul>
+                <p style="background: rgba(99, 102, 241, 0.1); padding: 10px; border-radius: 8px; font-size: 0.85rem; color: var(--primary);">
+                    👉 <b>Coba arahkan kursor (hover)</b> ke kotak di samping untuk melihat "angka" di balik warnanya!
+                </p>
+            </div>
+            <div class="pixel-demo">
+                <!-- Row 1 -->
+                <div class="pixel-block" style="background: #000;"><span>0.0</span></div>
+                <div class="pixel-block" style="background: #222;"><span>0.1</span></div>
+                <div class="pixel-block" style="background: #444;"><span>0.3</span></div>
+                <div class="pixel-block" style="background: #666;"><span>0.5</span></div>
+                <div class="pixel-block" style="background: #888;"><span>0.7</span></div>
+                <!-- Row 2 -->
+                <div class="pixel-block" style="background: #444;"><span>0.3</span></div>
+                <div class="pixel-block" style="background: #fff; color: #000 !important;"><span>1.0</span></div>
+                <div class="pixel-block" style="background: #fff; color: #000 !important;"><span>1.0</span></div>
+                <div class="pixel-block" style="background: #fff; color: #000 !important;"><span>1.0</span></div>
+                <div class="pixel-block" style="background: #444;"><span>0.3</span></div>
+                <!-- Row 3 -->
+                <div class="pixel-block" style="background: #000;"><span>0.0</span></div>
+                <div class="pixel-block" style="background: #222;"><span>0.1</span></div>
+                <div class="pixel-block" style="background: #444;"><span>0.3</span></div>
+                <div class="pixel-block" style="background: #222;"><span>0.1</span></div>
+                <div class="pixel-block" style="background: #000;"><span>0.0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 04: NORMALISASI -->
+    <div class="section">
+        <div class="section-title" style="margin-bottom: 20px;">04. Normalisasi (Penyusutan Skala)</div>
+        <p style="color: var(--text-dim); margin-bottom: 25px;">
+            AI melakukan pembagian <code>/ 255.0</code> ke <b>seluruh 784 pixel</b> secara bersamaan. Berikut simulasi pada grid 5x5:
+        </p>
+        <div class="norm-container" style="grid-template-columns: 1fr auto 1fr; gap: 10px;">
+            <!-- BEFORE 5x5 -->
+            <div class="norm-box">
+                <span class="layer-label">Sebelum (0 - 255)</span>
+                <div class="pixel-demo" style="grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 8px; background: #f1f5f9; border: 1px solid #e2e8f0;">
+                    <!-- Row 1 -->
+                    <div class="pixel-block" style="background: #000; color: #fff; font-size: 0.5rem;"><span>0</span></div>
+                    <div class="pixel-block" style="background: #333; color: #fff; font-size: 0.5rem;"><span>51</span></div>
+                    <div class="pixel-block" style="background: #666; color: #fff; font-size: 0.5rem;"><span>102</span></div>
+                    <div class="pixel-block" style="background: #999; color: #fff; font-size: 0.5rem;"><span>153</span></div>
+                    <div class="pixel-block" style="background: #ccc; color: #000; font-size: 0.5rem;"><span>204</span></div>
+                    <!-- Row 2 -->
+                    <div class="pixel-block" style="background: #333; color: #fff; font-size: 0.5rem;"><span>51</span></div>
+                    <div class="pixel-block" style="background: #fff; color: #000; font-size: 0.5rem;"><span>255</span></div>
+                    <div class="pixel-block" style="background: #fff; color: #000; font-size: 0.5rem;"><span>255</span></div>
+                    <div class="pixel-block" style="background: #fff; color: #000; font-size: 0.5rem;"><span>255</span></div>
+                    <div class="pixel-block" style="background: #333; color: #fff; font-size: 0.5rem;"><span>51</span></div>
+                    <!-- Row 3 -->
+                    <div class="pixel-block" style="background: #666; color: #fff; font-size: 0.5rem;"><span>102</span></div>
+                    <div class="pixel-block" style="background: #fff; color: #000; font-size: 0.5rem;"><span>255</span></div>
+                    <div class="pixel-block" style="background: #888; color: #fff; font-size: 0.5rem;"><span>128</span></div>
+                    <div class="pixel-block" style="background: #fff; color: #000; font-size: 0.5rem;"><span>255</span></div>
+                    <div class="pixel-block" style="background: #666; color: #fff; font-size: 0.5rem;"><span>102</span></div>
+                    <!-- Row 4 -->
+                    <div class="pixel-block" style="background: #999; color: #fff; font-size: 0.5rem;"><span>153</span></div>
+                    <div class="pixel-block" style="background: #fff; color: #000; font-size: 0.5rem;"><span>255</span></div>
+                    <div class="pixel-block" style="background: #fff; color: #000; font-size: 0.5rem;"><span>255</span></div>
+                    <div class="pixel-block" style="background: #fff; color: #000; font-size: 0.5rem;"><span>255</span></div>
+                    <div class="pixel-block" style="background: #999; color: #fff; font-size: 0.5rem;"><span>153</span></div>
+                    <!-- Row 5 -->
+                    <div class="pixel-block" style="background: #ccc; color: #000; font-size: 0.5rem;"><span>204</span></div>
+                    <div class="pixel-block" style="background: #999; color: #fff; font-size: 0.5rem;"><span>153</span></div>
+                    <div class="pixel-block" style="background: #666; color: #fff; font-size: 0.5rem;"><span>102</span></div>
+                    <div class="pixel-block" style="background: #333; color: #fff; font-size: 0.5rem;"><span>51</span></div>
+                    <div class="pixel-block" style="background: #000; color: #fff; font-size: 0.5rem;"><span>0</span></div>
+                </div>
+            </div>
+
+            <!-- OPERATION -->
+            <div class="math-op" style="width: 40px; height: 40px; font-size: 1.2rem;">÷</div>
+
+            <!-- AFTER 5x5 -->
+            <div class="norm-box" style="border-color: var(--accent);">
+                <span class="layer-label" style="color: var(--accent);">Sesudah (0.0 - 1.0)</span>
+                <div class="pixel-demo" style="grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 8px; background: rgba(16, 185, 129, 0.05); border: 1px solid var(--accent);">
+                    <!-- Row 1 -->
+                    <div class="pixel-block" style="background: #000; color: #fff; font-size: 0.5rem;"><span>0.0</span></div>
+                    <div class="pixel-block" style="background: #333; color: #fff; font-size: 0.5rem;"><span>0.2</span></div>
+                    <div class="pixel-block" style="background: #666; color: #fff; font-size: 0.5rem;"><span>0.4</span></div>
+                    <div class="pixel-block" style="background: #999; color: #fff; font-size: 0.5rem;"><span>0.6</span></div>
+                    <div class="pixel-block" style="background: #ccc; color: #000; font-size: 0.5rem;"><span>0.8</span></div>
+                    <!-- Row 2 -->
+                    <div class="pixel-block" style="background: #333; color: #fff; font-size: 0.5rem;"><span>0.2</span></div>
+                    <div class="pixel-block" style="background: #fff; color: var(--accent); font-size: 0.5rem; border: 1px solid var(--accent);"><span>1.0</span></div>
+                    <div class="pixel-block" style="background: #fff; color: var(--accent); font-size: 0.5rem; border: 1px solid var(--accent);"><span>1.0</span></div>
+                    <div class="pixel-block" style="background: #fff; color: var(--accent); font-size: 0.5rem; border: 1px solid var(--accent);"><span>1.0</span></div>
+                    <div class="pixel-block" style="background: #333; color: #fff; font-size: 0.5rem;"><span>0.2</span></div>
+                    <!-- Row 3 -->
+                    <div class="pixel-block" style="background: #666; color: #fff; font-size: 0.5rem;"><span>0.4</span></div>
+                    <div class="pixel-block" style="background: #fff; color: var(--accent); font-size: 0.5rem; border: 1px solid var(--accent);"><span>1.0</span></div>
+                    <div class="pixel-block" style="background: #888; color: #fff; font-size: 0.5rem;"><span>0.5</span></div>
+                    <div class="pixel-block" style="background: #fff; color: var(--accent); font-size: 0.5rem; border: 1px solid var(--accent);"><span>1.0</span></div>
+                    <div class="pixel-block" style="background: #666; color: #fff; font-size: 0.5rem;"><span>0.4</span></div>
+                    <!-- Row 4 -->
+                    <div class="pixel-block" style="background: #999; color: #fff; font-size: 0.5rem;"><span>0.6</span></div>
+                    <div class="pixel-block" style="background: #fff; color: var(--accent); font-size: 0.5rem; border: 1px solid var(--accent);"><span>1.0</span></div>
+                    <div class="pixel-block" style="background: #fff; color: var(--accent); font-size: 0.5rem; border: 1px solid var(--accent);"><span>1.0</span></div>
+                    <div class="pixel-block" style="background: #fff; color: var(--accent); font-size: 0.5rem; border: 1px solid var(--accent);"><span>1.0</span></div>
+                    <div class="pixel-block" style="background: #999; color: #fff; font-size: 0.5rem;"><span>0.6</span></div>
+                    <!-- Row 5 -->
+                    <div class="pixel-block" style="background: #ccc; color: #000; font-size: 0.5rem;"><span>0.8</span></div>
+                    <div class="pixel-block" style="background: #999; color: #fff; font-size: 0.5rem;"><span>0.6</span></div>
+                    <div class="pixel-block" style="background: #666; color: #fff; font-size: 0.5rem;"><span>0.4</span></div>
+                    <div class="pixel-block" style="background: #333; color: #fff; font-size: 0.5rem;"><span>0.2</span></div>
+                    <div class="pixel-block" style="background: #000; color: #fff; font-size: 0.5rem;"><span>0.0</span></div>
+                </div>
+            </div>
+        </div>
+        <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-dim); text-align: center;">
+            <i>"Tiap kotak pixel dibagi 255. Warnanya tetap, tapi angkanya jadi ramah bagi AI."</i>
+        </p>
+    </div>
+
+    <!-- SECTION 05: CLASS NAMES -->
+    <div class="section">
+        <div class="section-title" style="margin-bottom: 20px;">05. Kamus Penerjemah (Class Names)</div>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">
+            Karena output AI hanya berupa angka, kita butuh daftar nama untuk menerjemahkan angka tersebut ke bahasa manusia.
+        </p>
+        <div class="dict-grid">
+            <div class="dict-item"><div class="dict-num">0</div><div class="dict-label">T-shirt</div></div>
+            <div class="dict-item"><div class="dict-num">1</div><div class="dict-label">Trouser</div></div>
+            <div class="dict-item"><div class="dict-num">2</div><div class="dict-label">Pullover</div></div>
+            <div class="dict-item"><div class="dict-num">3</div><div class="dict-label">Dress</div></div>
+            <div class="dict-item"><div class="dict-num">4</div><div class="dict-label">Coat</div></div>
+            <div class="dict-item"><div class="dict-num">5</div><div class="dict-label">Sandal</div></div>
+            <div class="dict-item"><div class="dict-num">6</div><div class="dict-label">Shirt</div></div>
+            <div class="dict-item"><div class="dict-num">7</div><div class="dict-label">Sneaker</div></div>
+            <div class="dict-item"><div class="dict-num">8</div><div class="dict-label">Bag</div></div>
+            <div class="dict-item"><div class="dict-num">9</div><div class="dict-label">Ankle Boot</div></div>
+        </div>
+        <div style="margin-top: 15px; font-family: 'JetBrains+Mono', monospace; font-size: 0.75rem; color: var(--accent); text-align: center;">
+            🔍 <b>label_unik = np.unique(y_train)</b> ⮕ Hasil: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (Terbukti ada 10 jenis!)
+        </div>
+    </div>
+
+    <!-- SECTION 06: X_TRAIN -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-title">
+                <span>06. x_train (Struktur 3D)</span>
+                <span class="badge">Shape: (60000, 28, 28)</span>
+            </div>
+            <div class="badge" style="color:var(--primary)">3 Lapis Kurung Siku [[[ ]]]</div>
+        </div>
+        
+        <p style="color: var(--text-dim); margin-bottom: 20px;">
+            Bayangkan <code>x_train</code> sebagai rak buku. Setiap buku adalah satu gambar, dan setiap halaman adalah baris pixel.
+        </p>
+
+        <div class="x-visual">
+            <!-- IMAGE 0 -->
+            <div class="image-container">
+                <span class="layer-label">Lapis 2: Gambar [0]</span>
+                <div class="pixel-grid" id="grid-0"></div>
+                <div class="bracket-label">
+                    <code>x_train[0]</code> <br>
+                    <span style="font-size: 0.7rem;">Berisi 28 Array Baris (Lapis 3)</span>
+                </div>
+            </div>
+
+            <!-- IMAGE 1 -->
+            <div class="image-container">
+                <span class="layer-label">Lapis 2: Gambar [1]</span>
+                <div class="pixel-grid" id="grid-1"></div>
+                <div class="bracket-label">
+                    <code>x_train[1]</code> <br>
+                    <span style="font-size: 0.7rem;">Berisi 28 Array Baris</span>
+                </div>
+            </div>
+
+            <!-- IMAGE 4 (SHIRT) -->
+            <div class="image-container" style="border-color: var(--secondary); background: rgba(245, 158, 11, 0.05);">
+                <span class="layer-label" style="color: var(--secondary);">Lapis 2: Gambar [4] (Shirt)</span>
+                <div class="pixel-grid" id="grid-4"></div>
+                <div class="bracket-label" style="background: rgba(245, 158, 11, 0.1); color: var(--secondary);">
+                    <code>x_train[4]</code> <br>
+                    <span style="font-size: 0.7rem;">Detail: 28x28 Pixel</span>
+                </div>
+            </div>
+
+            <div style="align-self: center; font-size: 2rem; color: var(--text-dim);">...</div>
+        </div>
+    </div>
+
+    <!-- SECTION 07: Y_TRAIN -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-title">
+                <span>07. y_train (Struktur 1D)</span>
+                <span class="badge">Shape: (60000,)</span>
+            </div>
+            <div class="badge" style="color:var(--secondary)">1 Lapis Kurung Siku [ ]</div>
+        </div>
+
+        <p style="color: var(--text-dim); margin-bottom: 20px;">
+            Daftar jawaban tunggal. Sangat sederhana karena cuma berisi angka kode kategori.
+        </p>
+
+        <div class="y-visual">
+            <div class="label-box"><span class="label-idx">[0]</span><span class="label-val">9</span></div>
+            <div class="label-box"><span class="label-idx">[1]</span><span class="label-val">0</span></div>
+            <div class="label-box"><span class="label-idx">[2]</span><span class="label-val">0</span></div>
+            <div class="label-box"><span class="label-idx">[3]</span><span class="label-val">3</span></div>
+            <div class="label-box" style="border-color: var(--primary); background: rgba(79, 70, 229, 0.1);">
+                <span class="label-idx" style="color: var(--primary);">[4]</span><span class="label-val" style="color: var(--primary);">6</span>
+            </div>
+            <div class="label-box"><span class="label-idx">[5]</span><span class="label-val">2</span></div>
+            <div class="label-box"><span class="label-idx">[6]</span><span class="label-val">7</span></div>
+            <div style="align-self: flex-end; font-size: 1.5rem; color: var(--text-dim); padding: 10px;">...</div>
+        </div>
+    </div>
+
+    <!-- SECTION 08: MAPPING -->
+    <div class="section">
+        <div class="section-title" style="margin-bottom: 20px;">08. Hubungan Paralel</div>
+        <div class="mapping">
+            <div class="map-card">
+                <span class="layer-label">Data Input</span>
+                <div style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">x_train[4]</div>
+                <small style="color: var(--text-dim);">Array Matriks Gambar</small>
+            </div>
+            <div class="arrow">⟷</div>
+            <div class="map-card">
+                <span class="layer-label">Kunci Jawaban</span>
+                <div style="font-size: 1.2rem; font-weight: 700; color: var(--secondary);">y_train[4] = 6</div>
+                <small style="color: var(--text-dim);">Kode Angka</small>
+            </div>
+            <div class="arrow">⟷</div>
+            <div class="map-card">
+                <span class="layer-label">Bahasa Manusia</span>
+                <div style="font-size: 1.2rem; font-weight: 700; color: var(--accent);">class_names[6]</div>
+                <small style="color: var(--text-dim);">"Shirt" (Kemeja)</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 09: ARSITEKTUR MODEL -->
+    <div class="section">
+        <div class="section-title" style="margin-bottom: 25px;">09. Membangun Arsitektur Model (Otak AI)</div>
+        <p style="color: var(--text-dim); margin-bottom: 10px;">
+            Inilah struktur "Otak" yang kita bangun di baris kode 28-39:
+        </p>
+        
+        <div class="model-flow">
+            <!-- FLATTEN -->
+            <div class="flow-box flow-flatten">
+                <h3>Flatten</h3>
+                <p>Ratakan gambar jadi satu baris data</p>
+                <div class="flow-label">langkah persiapan</div>
+            </div>
+
+            <div class="flow-arrow">⮕</div>
+
+            <!-- HIDDEN -->
+            <div class="flow-box flow-hidden">
+                <h3>Dense (hidden)</h3>
+                <p>512 pendeteksi pola tiap pendeteksi fokus ke 1 ciri dari gambar</p>
+                <div class="flow-label">tempat model belajar</div>
+            </div>
+
+            <div class="flow-arrow">⮕</div>
+
+            <!-- OUTPUT -->
+            <div class="flow-box flow-output">
+                <h3>Dense (output)</h3>
+                <p>10 pendeteksi kategori 1 per jenis pakaian ➔ yang tertinggi menang</p>
+                <div class="flow-label">jawaban akhir</div>
+            </div>
+        </div>
+
+        <!-- DETAIL VISUALIZATION -->
+        <div style="margin-top: 60px; border-top: 1px dashed #cbd5e1; padding-top: 20px;">
+            <h4 style="font-size: 0.9rem; color: var(--primary); margin-bottom: 25px; text-align: center;">🔍 Visualisasi Detail: Apa yang Terjadi di Dalam?</h4>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                <!-- 1. FLATTEN DETAIL -->
+                <div class="flatten-detail" style="flex-direction: column; height: 100%;">
+                    <span style="font-size: 0.7rem; font-weight: 800; color: var(--primary); margin-bottom: 10px;">PROSES PERATAAN</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="grid-2d">
+                            <div class="pixel-small"></div><div class="pixel-small"></div><div class="pixel-small"></div><div class="pixel-small"></div>
+                            <div class="pixel-small"></div><div class="pixel-small"></div><div class="pixel-small"></div><div class="pixel-small"></div>
+                            <div class="pixel-small"></div><div class="pixel-small"></div><div class="pixel-small"></div><div class="pixel-small"></div>
+                            <div class="pixel-small"></div><div class="pixel-small"></div><div class="pixel-small"></div><div class="pixel-small"></div>
+                        </div>
+                        <div style="font-size: 1rem;">⮕</div>
+                        <div class="vector-1d">
+                            <div class="pixel-small"></div><div class="pixel-small"></div><div class="pixel-small"></div><div class="pixel-small"></div><div class="pixel-small"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. HIDDEN DETAIL -->
+                <div class="flatten-detail" style="background: rgba(67, 56, 202, 0.05); flex-direction: column; height: 100%;">
+                    <span style="font-size: 0.7rem; font-weight: 800; color: #4338ca; margin-bottom: 10px;">DETEKSI POLA (512)</span>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="display: flex; flex-direction: column; gap: 3px;">
+                            <div class="neuron-circle" style="width: 20px; height: 20px;">🧠</div>
+                            <div class="neuron-circle" style="width: 20px; height: 20px;">🧠</div>
+                            <div class="neuron-circle" style="width: 20px; height: 20px;">🧠</div>
+                        </div>
+                        <div style="font-size: 0.65rem; color: var(--text-dim); line-height: 1.2;">Mencari pola:<br>Lengan? Kerah?<br>Kancing? Tali?</div>
+                    </div>
+                </div>
+
+                <!-- 3. OUTPUT DETAIL -->
+                <div class="flatten-detail" style="background: rgba(6, 95, 70, 0.05); flex-direction: column; height: 100%;">
+                    <span style="font-size: 0.7rem; font-weight: 800; color: #065f46; margin-bottom: 10px;">KEPUTUSAN AKHIR</span>
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;">
+                        <div style="width: 12px; height: 12px; background: #cbd5e1; border-radius: 2px;"></div>
+                        <div style="width: 12px; height: 12px; background: #cbd5e1; border-radius: 2px;"></div>
+                        <div style="width: 12px; height: 12px; background: #10b981; border-radius: 2px; box-shadow: 0 0 8px #10b981;"></div>
+                        <div style="width: 12px; height: 12px; background: #cbd5e1; border-radius: 2px;"></div>
+                        <div style="width: 12px; height: 12px; background: #cbd5e1; border-radius: 2px;"></div>
+                        <div style="width: 12px; height: 12px; background: #cbd5e1; border-radius: 2px;"></div>
+                        <div style="width: 12px; height: 12px; background: #cbd5e1; border-radius: 2px;"></div>
+                        <div style="width: 12px; height: 12px; background: #cbd5e1; border-radius: 2px;"></div>
+                        <div style="width: 12px; height: 12px; background: #cbd5e1; border-radius: 2px;"></div>
+                        <div style="width: 12px; height: 12px; background: #cbd5e1; border-radius: 2px;"></div>
+                    </div>
+                    <div style="font-size: 0.65rem; color: #065f46; font-weight: 700; margin-top: 5px;">"Paling Mirip: SHIRT"</div>
+                </div>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 20px; text-align: center; font-style: italic;">
+                "Data masuk sebagai grid ⮕ diratakan ⮕ dicari polanya ⮕ dipilih yang paling cocok."
+            </p>
+        </div>
+    </div>
+
+    <!-- SECTION 10: ATURAN BELAJAR -->
+    <div class="section">
+        <div class="section-title" style="margin-bottom: 20px;">10. Aturan Belajar (Compile)</div>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">
+            Sebelum mulai latihan, kita harus menentukan "Gaya Belajar" dan "Cara Menghitung Nilai" si AI.
+        </p>
+        <div class="compile-grid">
+            <div class="rule-card">
+                <div class="rule-name">Optimizer (Gaya Belajar)</div>
+                <div class="rule-val">adam</div>
+                <div style="font-size: 0.75rem; color: var(--text-dim);">
+                    Ibarat guru pembimbing yang pintar mengatur kecepatan belajar agar AI tidak stres.
+                </div>
+            </div>
+            <div class="rule-card">
+                <div class="rule-name">Loss Function (Cara Menilai)</div>
+                <div class="rule-val">sparse_categorical_crossentropy</div>
+                <div style="font-size: 0.75rem; color: var(--text-dim);">
+                    Cara AI menghitung seberapa jauh jawabannya meleset dari kunci jawaban asli.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 11: SIKLUS BELAJAR -->
+    <div class="section">
+        <div class="section-title" style="margin-bottom: 20px;">11. Siklus Belajar & Ujian (Fit & Evaluate)</div>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">
+            Proses belajar (<b>Training</b>) dan tes akhir (<b>Evaluation</b>) untuk melihat kemampuan sebenarnya.
+        </p>
+        <div class="training-visual">
+            <div class="epoch-bar"><div class="epoch-progress" style="width: 100%; background: var(--primary);"></div><div class="epoch-text">LATIHAN: Akurasi Belajar 92%</div></div>
+            <div style="text-align: center; font-size: 1.2rem;">⬇️ VS ⬇️</div>
+            <div class="epoch-bar"><div class="epoch-progress" style="width: 88%; background: var(--secondary);"></div><div class="epoch-text">UJIAN: Akurasi Testing 88%</div></div>
+        </div>
+        <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-dim); border: 1px dashed var(--secondary); padding: 10px; border-radius: 8px;">
+            💡 <b>Wajar jika Ujian sedikit lebih rendah.</b> Jika Akurasi Latihan 99% tapi Ujian cuma 50%, berarti AI cuma <i>menghafal</i> (Overfitting).
+        </p>
+    </div>
+
+    <!-- SECTION 12: PREDIKSI -->
+    <div class="section">
+        <div class="section-title" style="margin-bottom: 20px;">12. Hasil Akhir: Prediksi & Keputusan</div>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">
+            AI tidak menjawab "Ini Kemeja". AI memberikan <b>10 angka probabilitas</b>. Kita menggunakan <code>np.argmax</code> untuk mengambil angka yang paling besar.
+        </p>
+        <div class="prob-container">
+            <div class="prob-row">
+                <div class="prob-label">T-shirt</div>
+                <div class="prob-bar-bg"><div class="prob-bar-fill" style="width: 5%;"></div></div>
+                <div class="prob-val">0.05</div>
+            </div>
+            <div class="prob-row" style="color: var(--primary); font-weight: 700;">
+                <div class="prob-label">Shirt</div>
+                <div class="prob-bar-bg"><div class="prob-bar-fill" style="width: 92%; background: var(--accent);"></div></div>
+                <div class="prob-val">0.92</div>
+            </div>
+            <div class="prob-row">
+                <div class="prob-label">Dress</div>
+                <div class="prob-bar-bg"><div class="prob-bar-fill" style="width: 3%;"></div></div>
+                <div class="prob-val">0.03</div>
+            </div>
+            <div style="text-align: center; color: var(--text-dim);">... 7 label lainnya ...</div>
+        </div>
+
+        <div class="decision-box">
+            <div style="font-size: 0.8rem; color: var(--accent); text-transform: uppercase; font-weight: 800; margin-bottom: 5px;">Keputusan AI (argmax)</div>
+            <div style="font-size: 2rem; font-weight: 800;">Label 6: "Shirt"</div>
+            <div style="font-size: 0.9rem; color: var(--text-dim);">Tingkat Keyakinan: 92%</div>
+            <div style="margin-top: 10px; font-size: 0.7rem; color: var(--primary); border-top: 1px solid var(--glass-border); padding-top: 10px;">
+                💾 <b>plt.savefig('hasil_prediksi.png')</b> ⮕ Hasil visualisasi disimpan ke file!
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Dibuat untuk mempermudah belajar Dasar-Dasar AI & Deep Learning.<br>
+        Seluruh baris kode <code>main.py</code> kini telah divisualisasikan.
+    </footer>
+</div>
+
+<script>
+    // Function to generate a shirt-like pixel pattern
+    function createPixels(gridId, patternType) {
+        const grid = document.getElementById(gridId);
+        for (let i = 0; i < 14 * 14; i++) {
+            const pixel = document.createElement('div');
+            pixel.className = 'pixel';
+            
+            const row = Math.floor(i / 14);
+            const col = i % 14;
+
+            if (patternType === 'shirt') {
+                // Simple Shirt Pattern
+                if ((row > 2 && row < 12 && col > 3 && col < 11) || // Body
+                    (row > 3 && row < 6 && col > 1 && col < 13)) { // Sleeves
+                    pixel.classList.add('active');
+                } else if (Math.random() > 0.8) {
+                    pixel.classList.add('mid');
+                }
+            } else if (patternType === 'boot') {
+                // Simple Boot Pattern
+                if ((row > 8 && row < 13 && col > 2 && col < 12) || // Sole
+                    (row > 4 && row < 10 && col > 7 && col < 12)) { // Ankle
+                    pixel.classList.add('active');
+                } else if (Math.random() > 0.9) {
+                    pixel.classList.add('mid');
+                }
+            } else {
+                // Random noise
+                if (Math.random() > 0.7) pixel.classList.add('mid');
+            }
+            grid.appendChild(pixel);
+        }
+    }
+
+    // Initialize grids
+    createPixels('grid-0', 'boot');
+    createPixels('grid-1', 'shirt');
+    createPixels('grid-4', 'shirt');
+</script>
+
+</body>
+</html>
